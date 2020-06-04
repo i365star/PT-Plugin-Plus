@@ -3,10 +3,16 @@ import {
   ERequestResultType,
   ESizeUnit,
   EButtonType,
-  ERequsetType,
+  ERequestMethod,
   EAction,
   EDataResultType,
-  EUserDataRequestStatus
+  EUserDataRequestStatus,
+  EBeforeSearchingItemSearchMode,
+  EBackupServerType,
+  EPluginPosition,
+  EWorkingStatus,
+  EEncryptMode,
+  ETorrentStatus
 } from "./enum";
 
 /**
@@ -40,12 +46,14 @@ export interface ButtonOption {
   click?: Function;
   icon?: string;
   type?: EButtonType;
+  onDrop?: Function;
 }
 
 export interface SystemOptions {
   sites?: any[];
   schemas?: any[];
   clients?: any[];
+  publicSites?: any[];
 }
 
 export type Dictionary<T> = { [key: string]: T };
@@ -54,6 +62,27 @@ export interface SearchOptions {
   key?: string;
   tags?: string[];
   timeout?: number;
+  saveKey?: boolean;
+}
+
+export interface IApiKey {
+  omdb?: string[];
+  douban?: string[];
+}
+
+/**
+ * 备份服务器
+ */
+export interface IBackupServer {
+  id: string;
+  type: EBackupServerType;
+  address: string;
+  name: string;
+  lastBackupTime?: number;
+  loginName?: string;
+  loginPwd?: string;
+  authCode?: string;
+  digest?: boolean;
 }
 
 /**
@@ -95,15 +124,67 @@ export interface Options {
   displayUserName?: string;
   // 分享寄语
   shareMessage?: string;
+  // 搜索结果点击站点时，按站点优先级别排序
+  searchResultOrderBySitePriority?: boolean;
+  // 导航栏是否已打开
+  navBarIsOpen?: boolean;
+  // 在搜索时显示电影信息（搜索IMDb时有效）
+  showMoiveInfoCardOnSearch?: boolean;
+  // 在搜索之前一些选项配置
+  beforeSearchingOptions?: BeforeSearching;
+  // 在页面中显示工具栏
+  showToolbarOnContentPage?: boolean;
+  // 当前语言
+  locale?: string;
+  // 下载失败重试后是否重试
+  downloadFailedRetry?: boolean;
+  // 下载失败重试次数
+  downloadFailedFailedRetryCount?: number;
+  // 下载失败间隔时间（秒）
+  downloadFailedFailedRetryInterval?: number;
+  // 用户自定义 API Key 列表
+  apiKey?: IApiKey;
+  // 备份服务器列表
+  backupServers?: IBackupServer[];
+  // 批量下载时间间隔（秒）
+  batchDownloadInterval?: number;
+  // 启用后台批量下载
+  enableBackgroundDownload?: boolean;
+  // 插件默认显示位置
+  position?: EPluginPosition;
+  // 默认的收藏分组ID
+  defaultCollectionGroupId?: string;
+  // 允许备份站点 cookies
+  allowBackupCookies?: boolean;
+  // 加密备份的数据
+  encryptBackupData?: boolean;
+  // 加密密钥，本项内容备份时清除
+  encryptSecretKey?: string;
+  // 加密方式
+  encryptMode?: EEncryptMode;
+  // 允许保存搜索结果快照
+  allowSaveSnapshot?: boolean;
+}
+
+// 在搜索之前一些选项配置
+export interface BeforeSearching {
+  // 在输入搜索关键字时加载相关信息
+  getMovieInformation?: boolean;
+  // 最多返回条目
+  maxMovieInformationCount?: number;
+  // 当点击条目时，搜索模式
+  searchModeForItem?: EBeforeSearchingItemSearchMode;
 }
 
 export interface Plugin {
+  id?: string;
   name?: string;
   pages?: string[] | any;
   scripts?: string[] | any;
   styles?: string[] | any;
   script?: string;
   style?: string;
+  isCustom?: boolean;
 }
 
 export interface SiteSchema {
@@ -112,6 +193,7 @@ export interface SiteSchema {
   plugins?: Plugin[] | any;
   siteOnly?: boolean;
   securityKeyFields?: string[];
+  searchEntryConfig?: SearchEntryConfig;
   searchEntry?: SearchEntry[];
   parser?: Dictionary<any>;
   patterns?: Dictionary<any>;
@@ -156,16 +238,33 @@ export interface Site {
   plugins?: any[];
   allowSearch?: boolean;
   securityKeys?: object;
+  searchEntryConfig?: SearchEntryConfig;
   searchEntry?: SearchEntry[];
   parser?: Dictionary<any>;
   patterns?: Dictionary<any>;
   checker?: Dictionary<any>;
   torrentTagSelectors?: any[];
   categories?: SiteCategories[];
-  downloadMethod?: ERequsetType;
+  downloadMethod?: ERequestMethod;
   user?: UserInfo;
   selectors?: Dictionary<any>;
   allowGetUserInfo?: boolean;
+  // 站点优先级
+  priority?: number;
+  path?: string;
+  // 曾用域名列表，用于数据升级
+  formerHosts?: string[];
+  // 离线，设置为true时，不再进行搜索和个人信息获取，保存原数据统计
+  // todo: 后续可根据站点返回的状态码自动设置为离线
+  offline?: boolean;
+  // 是否为自定义
+  isCustom?: boolean;
+  // 时区偏移量，用于解决时差问题，如：+08:00, -08:00, +0800, UTC+0800, UTC+08:00
+  // @see https://zh.wikipedia.org/wiki/各國時區列表
+  // @see https://zh.wikipedia.org/wiki/时区
+  timezoneOffset?: string;
+  // 是否合并 Schema 的标签选择器
+  mergeSchemaTagSelectors?: boolean;
 }
 
 export interface Request {
@@ -173,12 +272,15 @@ export interface Request {
   data?: any;
 }
 
+export interface IRequest extends Request {}
+
 export interface NoticeOptions {
   msg?: string;
   type?: string;
   timeout?: number;
   position?: string;
   text?: string;
+  indeterminate?: boolean;
 }
 
 export interface CacheType {
@@ -189,11 +291,14 @@ export interface CacheType {
  * 下载参数
  */
 export interface DownloadOptions {
+  // 下载地址
   url: string;
   title?: string;
   savePath?: string;
   autoStart?: boolean;
   clientId?: string;
+  // 来源链接地址
+  link?: string;
 }
 
 /**
@@ -250,26 +355,138 @@ export interface SearchResultItem {
   tags?: SearchResultItemTag[];
   entryName?: string;
   category?: SearchResultItemCategory;
+  // 进度（100表示完成）
+  progress?: number;
+  // 状态
+  status?: ETorrentStatus;
+  host?: string;
 }
 
-export interface SearchEntry {
-  name?: string;
+/**
+ * 搜索区域
+ */
+export interface SearchEntryConfigArea {
+  name: string;
+  queryString?: string;
+  appendQueryString?: string;
+  keyAutoMatch?: string;
+  replaceKey?: string[];
+  parseScript?: string;
+  // 替换默认页面
+  page?: string;
+}
+
+export interface ISearchFieldIndex {
+  // 发布时间
+  time?: number;
+  // 大小
+  size?: number;
+  // 上传数量
+  seeders?: number;
+  // 下载数量
+  leechers?: number;
+  // 完成数量
+  completed?: number;
+  // 评论数量
+  comments?: number;
+  // 发布人
+  author?: number;
+  // 分类
+  category?: number;
+  link?: number;
+  url?: number;
+  subTitle?: number;
+  title?: number;
+}
+
+/**
+ * 通用页面解析
+ */
+export interface IPageSelector {
+  // 需要请求的页面
+  page: string;
+  // 返回的数据类型，可用值：html，json ；默认为 html
+  dataType?: ERequestResultType;
+  // 用于解析数据的脚本文件路径；当指定该内容时，则执行该解析器，由解析器处理指定页面返回的内容，可用于请求多个页面等操作；
+  parser?: string;
+  // 请求方法，默认为 GET
+  requestMethod?: ERequestMethod;
+  // 数据请求头信息
+  headers?: Dictionary<any>;
+  // 需要提交的数据
+  requestData?: Dictionary<any>;
+  // 选择器列表
+  fields?: Dictionary<any>;
+  // 执行该规则的前提条件（条件表达式），合法的 js 语句；
+  prerequisites?: string;
+  // 是否合并 schema 已定义的内容，默认为 false
+  merge?: boolean;
+  // 指定用于获取内容的顶级 DOM 对象，默认为 body
+  topElement?: string;
+  // 缓存时间，单位：秒，0 及空表示不缓存
+  dataCacheTime?: number;
+}
+
+// 搜索入口默认配置
+export interface SearchEntryConfig {
+  page: string;
   entry?: string;
   resultType?: ERequestResultType;
+  queryString?: string;
   parseScriptFile?: string;
   parseScript?: string;
+  // 是否异步解析脚本
+  asyncParse?: boolean;
+  // 数据表选择器
   resultSelector?: string;
+  area?: SearchEntryConfigArea[];
+  // 数据请求头信息
+  headers?: Dictionary<any>;
+  // 跳过IMDb搜索
+  skipIMDbId?: boolean;
+  // 搜索解析字段索引
+  fieldIndex?: ISearchFieldIndex;
+  // 数据字段选择器
+  fieldSelector?: Dictionary<any>;
+  // 第一行数据行
+  firstDataRowIndex?: number;
+  // 数据行选择器，默认：> tbody > tr
+  dataRowSelector?: string;
+  // 验证已登录正则表达式
+  loggedRegex?: string;
+  // 在搜索前需要处理的脚本
+  beforeSearch?: IPageSelector;
+  // 请求方法，默认为 GET
+  requestMethod?: ERequestMethod;
+  // 需要提交的数据
+  requestData?: Dictionary<any>;
+}
+
+/**
+ * 具体搜索入口配置
+ */
+export interface SearchEntry extends SearchEntryConfig {
+  // 搜索入口名称
+  name?: string;
+  // 是否启用
   enabled?: boolean;
+  // 标签选择器配置
   tagSelectors?: any[];
+  // 是否为自定义
   isCustom?: boolean;
+  // id，自动生成
   id?: string;
-  queryString?: string;
+  // 分类目录
   categories?: string[];
+  // 追加到搜索关键字的内容
   appendToSearchKeyString?: string;
+  // 追加到查询字符串的内容
+  appendQueryString?: string;
 }
 
 export interface UIOptions {
   paginations?: Dictionary<any>;
+  views?: Dictionary<any>;
 }
 
 // 搜索方案
@@ -325,4 +542,187 @@ export interface UserInfo {
   isLoading?: boolean;
   // 最后错误信息
   lastErrorMsg?: string;
+  // 消息数量
+  messageCount?: number;
+  [key: string]: any;
+}
+
+export type i18nResource = {
+  name: string;
+  code: string;
+  authors?: Array<string>;
+  words: Dictionary<any>;
+};
+
+// 搜索时附加数据
+export interface ISearchPayload {
+  imdbId?: string;
+  doubanId?: string;
+  cn?: string;
+  en?: string;
+  key?: string;
+}
+
+export interface IHashData {
+  hash: string;
+  keyMap: number[];
+  length: number;
+}
+
+export interface IManifest {
+  checkInfo: IHashData;
+  version: string;
+  time: number;
+  hash?: string;
+  encryptMode?: EEncryptMode;
+}
+
+/**
+ * 已收藏的种子
+ */
+export interface ICollection {
+  host: string;
+  title: string;
+  // 下载地址
+  url: string;
+  // 种子页面链接
+  link: string;
+  site: any;
+  size: number;
+  time?: number;
+  subTitle?: string;
+  movieInfo?: {
+    title: string;
+    alt_title: string;
+    imdbId?: string;
+    doubanId?: string;
+    image?: string;
+    link?: string;
+    year?: number;
+  };
+  // 分组ID列表
+  groups?: string[];
+}
+
+/**
+ * 收藏分组
+ */
+export interface ICollectionGroup {
+  id?: string;
+  name: string;
+  count?: number;
+  description?: string;
+  image?: string;
+  color?: string;
+  update?: number;
+}
+
+export const BASE_COLORS = [
+  "red",
+  "pink",
+  "purple",
+  "deep-purple",
+  "indigo",
+  "blue",
+  "light-blue",
+  "cyan",
+  "teal",
+  "green",
+  "light-green",
+  "lime",
+  "yellow",
+  "amber",
+  "orange",
+  "deep-orange",
+  "brown",
+  "blue-grey",
+  "grey",
+  "black"
+];
+
+/**
+ * 通用标签颜色
+ */
+export const BASE_TAG_COLORS: Dictionary<any> = {
+  // 免费下载
+  Free: "blue",
+  // 免费下载 + 2x 上传
+  "2xFree": "green",
+  // 2x 上传
+  "2xUp": "lime",
+  // 2x 上传 + 50% 下载
+  "2x50%": "light-green",
+  // 25% 下载
+  "25%": "purple",
+  // 30% 下载
+  "30%": "indigo",
+  // 35% 下载
+  "35%": "indigo darken-3",
+  // 50% 下载
+  "50%": "orange",
+  // 70% 下载
+  "70%": "blue-grey",
+  // 75% 下载
+  "75%": "lime darken-3",
+  // 仅 VIP 可下载
+  VIP: "orange darken-2",
+  // 禁止转载
+  "⛔️": "deep-orange darken-1"
+};
+
+export interface ICookies {
+  host: string;
+  url: string;
+  cookies: chrome.cookies.Cookie[];
+}
+
+export interface IURL {
+  href: string;
+  protocol: string;
+  host: string;
+  port?: number;
+  query?: string;
+  params?: string[];
+  hash?: string;
+  path: string;
+  segments: string;
+  origin: string;
+}
+
+export interface IWorkingStatusItem {
+  key: string;
+  status?: EWorkingStatus;
+  title: string;
+}
+
+export interface ISearchResultSnapshot {
+  id: string;
+  key: string;
+  time: number;
+  searchPayload?: ISearchPayload;
+  result: SearchResultItem[];
+}
+
+export interface IBackupRawData {
+  options: any;
+  userData: any;
+  collection: any;
+  cookies?: any;
+  searchResultSnapshot?: any;
+  keepUploadTask?: any;
+  downloadHistory?: any;
+}
+
+export interface IKeepUploadTask {
+  id: string;
+  time: number;
+  title: string;
+  downloadOptions: DownloadOptions;
+  items: any[];
+}
+
+export interface ISiteIcon {
+  origin: string;
+  host: string;
+  data: string;
 }

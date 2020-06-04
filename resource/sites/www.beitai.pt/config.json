@@ -1,0 +1,18 @@
+{
+  "name": "备胎",
+  "timezoneOffset": "+0800",
+  "schema": "NexusPHP",
+  "url": "https://www.beitai.pt/",
+  "description": "找不到家时，接纳无家可归的人",
+  "icon": "https://www.beitai.pt/favicon.ico",
+  "tags": ["综合"],
+  "host": "www.beitai.pt",
+  "collaborator": "wyx1818",
+  "searchEntryConfig": {
+    "area": [{
+      "name": "IMDB",
+      "keyAutoMatch": "^(tt\\d+)$",
+      "appendQueryString": "&search_area=1"
+    }]
+  }
+}

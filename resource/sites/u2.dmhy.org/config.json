@@ -1,5 +1,6 @@
 {
   "name": "U2",
+  "timezoneOffset": "+0800",
   "description": "动漫花园分享园",
   "url": "https://u2.dmhy.org/",
   "icon": "https://u2.dmhy.org/favicon.ico",
@@ -9,148 +10,119 @@
   ],
   "schema": "NexusPHP",
   "host": "u2.dmhy.org",
+  "searchEntryConfig": {
+    "merge": true,
+    "fieldSelector": {
+      "progress": {
+        "selector": ["td[class*='seedhlc_']", "td[class*='leechhlc_']", ""],
+        "switchFilters": [
+          ["100"],
+          ["query[0].innerHTML.split('<br>')[1]"],
+          ["null"]
+        ]
+      },
+      "status": {
+        "selector": ["td[class*='seedhlc_ever']", ".seedhlc_current", ".leechhlc_inactive", ".leechhlc_current"],
+        "switchFilters": [
+          ["255"],
+          ["2"],
+          ["3"],
+          ["1"]
+        ]
+      },
+      "leechers": {
+        "selector": [""],
+        "filters": ["query.get(0).firstChild", "query.nodeValue||query.innerText||0"]
+      }
+    }
+  },
   "searchEntry": [{
-      "entry": "/torrents.php?search=$key$&notnewword=1",
       "name": "全站",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": true
     },
     {
-      "entry": "/torrents.php?cat9=1&search=$key$&notnewword=1",
+      "queryString": "cat9=1",
       "name": "U2-Rip",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat411=1&search=$key$&notnewword=1",
+      "queryString": "cat411=1",
       "name": "U2-RBD",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat10=1&search=$key$&notnewword=1",
+      "queryString": "cat10=1",
       "name": "R3TRAW",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat11=1&search=$key$&notnewword=1",
+      "queryString": "cat11=1",
       "name": "R2JRAW",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat12=1&search=$key$&notnewword=1",
+      "queryString": "cat12=1",
       "name": "BDRip",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat13=1&search=$key$&notnewword=1",
+      "queryString": "cat13=1",
       "name": "DVDRip",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat14=1&search=$key$&notnewword=1",
+      "queryString": "cat14=1",
       "name": "HDTVRip",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat15=1&search=$key$&notnewword=1",
+      "queryString": "cat15=1",
       "name": "DVDISO",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat16=1&search=$key$&notnewword=1",
+      "queryString": "cat16=1",
       "name": "BDMV",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat17=1&search=$key$&notnewword=1",
+      "queryString": "cat17=1",
       "name": "LQRip",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat410=1&search=$key$&notnewword=1",
+      "queryString": "cat410=1",
       "name": "外挂结构",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat412=1&search=$key$&notnewword=1",
+      "queryString": "cat412=1",
       "name": "加流重灌",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat21=1&search=$key$&notnewword=1",
+      "queryString": "cat21=1",
       "name": "Raw Books",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat22=1&search=$key$&notnewword=1",
+      "queryString": "cat22=1",
       "name": "港译漫画",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat23=1&search=$key$&notnewword=1",
+      "queryString": "cat23=1",
       "name": "台译漫画",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat30=1&search=$key$&notnewword=1",
+      "queryString": "cat30=1",
       "name": "Lossless Music",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat40=1&search=$key$&notnewword=1",
+      "queryString": "cat40=1",
       "name": "Others",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     }
   ],
@@ -234,6 +206,15 @@
         "bonus": {
           "selector": ["td.rowhead:contains('UCoin') + td"],
           "filters": ["query.text().replace(/,/g,'').match(/\\(([\\d.]+)/)", "(query && query.length>=2)?parseFloat(query[1]):0"]
+        }
+      }
+    },
+    "/details.php": {
+      "merge": true,
+      "fields": {
+        "sayThanksButton": {
+          "selector": ["span#thanksbutton input:button:first:not(:disabled)"],
+          "filters": ["query"]
         }
       }
     }

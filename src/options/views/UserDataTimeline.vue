@@ -16,19 +16,36 @@
             <div class="title">{{ displayUserName || infos.nameInfo.name }}</div>
           </v-chip>
           <v-spacer></v-spacer>
-          <v-btn flat icon class="white--text" @click="share" v-if="!shareing" :title="words.share">
+          <v-btn
+            flat
+            icon
+            class="white--text"
+            @click="share"
+            v-if="!shareing"
+            :title="$t('timeline.share')"
+          >
             <v-icon>share</v-icon>
+          </v-btn>
+          <v-btn
+            flat
+            icon
+            class="white--text"
+            to="/home"
+            v-if="!shareing"
+            :title="$t('timeline.close')"
+          >
+            <v-icon>close</v-icon>
           </v-btn>
           <v-progress-circular indeterminate :width="3" size="30" color="green" v-if="shareing"></v-progress-circular>
         </v-card-actions>
 
         <v-card-title primary-title>
           <div class="headline font-weight-bold">
-            <div>上传总量：{{ infos.total.uploaded | formatSize }}</div>
-            <div>下载总量：{{ infos.total.downloaded | formatSize }}</div>
-            <div>做种总量：{{ infos.total.seedingSize | formatSize }} ({{ infos.total.seeding }})</div>
-            <div>总分享率：{{ infos.total.ratio | formatRatio }}</div>
-            <div>．．Ｐ龄：≈ {{ infos.joinTimeInfo.years }} 年</div>
+            <div>{{ $t('timeline.total.uploaded') }}{{ infos.total.uploaded | formatSize }}</div>
+            <div>{{ $t('timeline.total.downloaded') }}{{ infos.total.downloaded | formatSize }}</div>
+            <div>{{ $t('timeline.total.seedingSize') }}{{ infos.total.seedingSize | formatSize }} ({{ infos.total.seeding }})</div>
+            <div>{{ $t('timeline.total.ratio') }}{{ infos.total.ratio | formatRatio }}</div>
+            <div>{{ $t('timeline.total.years', {year: infos.joinTimeInfo.years}) }}</div>
           </div>
         </v-card-title>
         <v-card-text>
@@ -40,31 +57,31 @@
             >... {{ shareMessage }} ...</div>
             <div
               style="color:#b5b5b5;"
-            >(数据更新于：{{ options.autoRefreshUserDataLastTime | formatDate('YYYY-MM-DD HH:mm:ss') }})</div>
+            >({{ $t('timeline.updateat') }}{{ options.autoRefreshUserDataLastTime | formatDate('YYYY-MM-DD HH:mm:ss') }})</div>
           </div>
 
           <v-timeline class="my-2">
             <v-timeline-item v-for="(site, i) in datas" :key="i" color="transparent" large>
               <template v-slot:icon>
                 <v-avatar size="38">
-                  <img :src="site.icon">
+                  <img :src="site.icon" />
                 </v-avatar>
               </template>
               <template v-slot:opposite>
                 <div class="headline font-weight-bold">{{ site.user.joinTime | timeAgo }}</div>
-                <div
-                  class="caption"
-                  v-if="showUserName"
-                >{{ site.user.name }} &lt;{{ site.user.levelName }}&gt;</div>
+                <div class="caption">
+                  <span v-if="showUserName" class="mr-2">{{ site.user.name }}</span>
+                  <span v-if="showUserLevel">&lt;{{ site.user.levelName }}&gt;</span>
+                </div>
               </template>
               <div>
                 <v-divider v-if="i>0" class="mb-2"></v-divider>
                 <div class="headline font-weight-light mb-2" v-if="showSiteName">{{ site.name }}</div>
-                <div>上传量：{{ site.user.uploaded | formatSize }}</div>
-                <div>下载量：{{ site.user.downloaded | formatSize }}</div>
-                <div>分享率：{{ site.user.ratio | formatRatio }}</div>
-                <div>做种量：{{ site.user.seedingSize | formatSize }} ({{ site.user.seeding }})</div>
-                <div>积分值：{{ site.user.bonus | formatNumber }}</div>
+                <div>{{ $t('timeline.user.uploaded') }}{{ site.user.uploaded | formatSize }}</div>
+                <div>{{ $t('timeline.user.downloaded') }}{{ site.user.downloaded | formatSize }}</div>
+                <div>{{ $t('timeline.user.ratio') }}{{ site.user.ratio | formatRatio }}</div>
+                <div>{{ $t('timeline.user.seedingSize') }}{{ site.user.seedingSize | formatSize }} ({{ site.user.seeding }})</div>
+                <div>{{ $t('timeline.user.bonus') }}{{ site.user.bonus | formatNumber }}</div>
               </div>
             </v-timeline-item>
           </v-timeline>
@@ -73,14 +90,30 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <span>{{ shareTime | formatDate('YYYY-MM-DD HH:mm:ss') }}</span>
-          <span class="ml-1">Created By PT 助手 Plus {{ version }}</span>
+          <span class="ml-1">Created By {{ $t('app.name') }} {{ version }}</span>
         </v-card-actions>
       </v-card>
     </div>
 
     <div class="toolbar">
-      <v-switch color="success" v-model="showUserName" :label="words.userName" class="my-0"></v-switch>
-      <v-switch color="success" v-model="showSiteName" :label="words.siteName" class="my-0"></v-switch>
+      <v-switch
+        color="success"
+        v-model="showSiteName"
+        :label="$t('timeline.siteName')"
+        class="my-0"
+      ></v-switch>
+      <v-switch
+        color="success"
+        v-model="showUserName"
+        :label="$t('timeline.userName')"
+        class="my-0"
+      ></v-switch>
+      <v-switch
+        color="success"
+        v-model="showUserLevel"
+        :label="$t('timeline.userLevel')"
+        class="my-0"
+      ></v-switch>
     </div>
   </div>
 </template>
@@ -90,18 +123,14 @@ import { Site, Dictionary, EAction, Options } from "@/interface/common";
 import html2canvas from "html2canvas";
 import FileSaver from "file-saver";
 import Extension from "@/service/extension";
+import dayjs from "dayjs";
 
 const extension = new Extension();
 
 export default Vue.extend({
   data() {
     return {
-      words: {
-        share: "生成分享图片",
-        siteName: "网站名称",
-        userName: "用户名称"
-      },
-      shareMessage: "这些年走过的路",
+      shareMessage: this.$t("timeline.shareMessage").toString(),
       displayUserName: "",
       sites: [] as Site[],
       infos: {
@@ -109,7 +138,7 @@ export default Vue.extend({
         joinTimeInfo: {
           site: {} as Site,
           time: new Date().getTime(),
-          years: 0
+          years: 0 as number | string
         },
         maxUploadedInfo: {
           site: {} as Site,
@@ -133,7 +162,9 @@ export default Vue.extend({
       shareTime: new Date(),
       shareing: false,
       showUserName: true,
-      showSiteName: true
+      showSiteName: true,
+      showUserLevel: true,
+      iconCache: {} as Dictionary<any>
     };
   },
   created() {
@@ -166,6 +197,13 @@ export default Vue.extend({
     formatData() {
       let userNames: Dictionary<any> = {};
       let result = this.infos;
+      result.total = {
+        uploaded: 0,
+        downloaded: 0,
+        seedingSize: 0,
+        ratio: -1,
+        seeding: 0
+      };
 
       let sites: Site[] = [];
       this.sites.forEach((site: Site) => {
@@ -223,9 +261,10 @@ export default Vue.extend({
       });
 
       if (result.joinTimeInfo.time > 0) {
-        let now = new Date();
-        result.joinTimeInfo.years =
-          now.getFullYear() - new Date(result.joinTimeInfo.time).getFullYear();
+        // 计算P龄，带小数
+        result.joinTimeInfo.years = dayjs(new Date())
+          .diff(result.joinTimeInfo.time, "year", true)
+          .toFixed(2);
       }
 
       this.infos = result;
@@ -246,7 +285,7 @@ export default Vue.extend({
       this.infos.total.ratio = this.getRatio(this.infos.total);
       setTimeout(() => {
         this.replaceImageToBase64();
-      }, 1000);
+      }, 200);
     },
     getRatio(info: any): number {
       let downloaded = info.downloaded as number;
@@ -271,14 +310,17 @@ export default Vue.extend({
       let div = this.$refs.userDataCard as HTMLDivElement;
       this.shareing = true;
       this.shareTime = new Date();
-      html2canvas(div, {}).then(canvas => {
-        canvas.toBlob((blob: any) => {
-          if (blob) {
-            FileSaver.saveAs(blob, "PT-Plugin-Plus-UserData.png");
-          }
-          this.shareing = false;
+      this.formatData();
+      setTimeout(() => {
+        html2canvas(div, {}).then(canvas => {
+          canvas.toBlob((blob: any) => {
+            if (blob) {
+              FileSaver.saveAs(blob, "PT-Plugin-Plus-UserData.png");
+            }
+            this.shareing = false;
+          });
         });
-      });
+      }, 500);
     },
 
     /**
@@ -291,9 +333,14 @@ export default Vue.extend({
       imgs.each((index, el) => {
         let src = $(el).attr("src") + "";
         if (src.indexOf("http") > -1) {
+          if (this.iconCache[src]) {
+            $(el).attr("src", this.iconCache[src]);
+            return;
+          }
           extension
             .sendRequest(EAction.getBase64FromImageUrl, null, src)
             .then(result => {
+              this.iconCache[src] = result;
               $(el).attr("src", result);
             })
             .catch(e => {
@@ -307,7 +354,10 @@ export default Vue.extend({
      * 修改需要显示的用户名
      */
     changeDisplayUserName() {
-      let result = prompt("请输入需要显示的名称：", this.displayUserName);
+      let result = prompt(
+        this.$t("timeline.inputDisplayName").toString(),
+        this.displayUserName
+      );
       if (result != null) {
         this.displayUserName = result;
         this.$store.dispatch("saveConfig", {
@@ -320,7 +370,10 @@ export default Vue.extend({
      * 修复需要分享的寄语
      */
     changeShareMessage() {
-      let result = prompt("请输入需要显示的信息：", this.shareMessage);
+      let result = prompt(
+        this.$t("timeline.inputShareMessage").toString(),
+        this.shareMessage
+      );
       if (result != null) {
         this.shareMessage = result;
         this.$store.dispatch("saveConfig", {

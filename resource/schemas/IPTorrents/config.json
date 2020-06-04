@@ -20,8 +20,7 @@
   }],
   "torrentTagSelectors": [{
     "name": "Free",
-    "selector": "span.t_tag_free_leech",
-    "color": "blue"
+    "selector": "span.t_tag_free_leech"
   }],
   "selectors": {
     "userBaseInfo": {
@@ -41,6 +40,10 @@
         "isLogged": {
           "selector": ["a[href*='logout.php']", "form[action*='lout']"],
           "filters": ["query.length>0"]
+        },
+        "messageCount": {
+          "selector": ["td[style*='background: red'] a[href*='messages.php']"],
+          "filters": ["query.text().match(/(\\d+)/)", "(query && query.length>=2)?parseInt(query[1]):0"]
         }
       }
     },
@@ -49,11 +52,11 @@
       "fields": {
         "uploaded": {
           "selector": ["th:contains('Uploaded') + td"],
-          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[TGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
+          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[ZEPTGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
         },
         "downloaded": {
           "selector": ["th:contains('Downloaded') + td"],
-          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[TGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
+          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[ZEPTGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
         },
         "ratio": {
           "selector": "th:contains('Share ratio') + td",
@@ -76,6 +79,14 @@
         },
         "seedingSize": {
           "value": -1
+        }
+      }
+    },
+    "/details.php": {
+      "fields": {
+        "size": {
+          "selector": ["th.ar:contains('Size') + td"],
+          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[ZEPTGMK]?i?B)/)", "(query && query.length>1)?(query[1]).sizeToNumber():0"]
         }
       }
     }

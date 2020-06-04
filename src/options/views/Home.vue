@@ -1,47 +1,59 @@
 <template>
   <div class="home">
-    <v-alert :value="true" type="info">{{ words.title }}</v-alert>
-
-    <!-- 请求队列-->
-    <!-- <v-list small v-if="requestQueue && requestQueue.length">
-      <template v-for="(item, index) in requestQueue">
-        <v-list-tile :key="item.site.host">
-          <v-list-tile-action>
-            <v-progress-circular :size="18" :width="2" indeterminate color="primary"></v-progress-circular>
-          </v-list-tile-action>
-
-          <v-list-tile-content>
-            <v-list-tile-title>
-              <v-avatar size="18" class="mr-2">
-                <img :src="item.site.icon">
-              </v-avatar>
-              {{item.site.name}} {{ words.requesting }}
-            </v-list-tile-title>
-          </v-list-tile-content>
-
-          <v-list-tile-action class="mr-5">
-            <v-icon @click="abortRequest(item.site)" color="red" :title="words.cancelRequest">cancel</v-icon>
-          </v-list-tile-action>
-        </v-list-tile>
-        <v-divider v-if="index + 1 < requestQueue.length" :key="'line'+item.site.host+index"></v-divider>
-      </template>
-    </v-list>-->
+    <v-alert :value="true" type="info">{{ $t("home.title") }}</v-alert>
     <v-card>
-      <v-card-title>
-        <v-btn color="success" @click="getInfos" :loading="loading">
+      <v-card-title v-if="sites && sites.length > 0">
+        <v-btn color="success" @click="getInfos" :loading="loading" :title="$t('home.getInfos')">
           <v-icon class="mr-2">cached</v-icon>
-          {{words.getInfos}}
+          {{ $t("home.getInfos") }}
         </v-btn>
-        <v-btn to="/user-data-timeline" color="success">
-          <v-icon class="mr-2">timeline</v-icon>
+        <v-btn to="/user-data-timeline" color="success" :title="$t('home.timeline')">
+          <v-icon>timeline</v-icon>
         </v-btn>
-        <v-switch
-          v-model="isSecret"
-          class="ml-2 mt-4"
-          color="success"
-          :label="words.secret"
-          style="width: 100px;flex:none;"
-        ></v-switch>
+
+        <v-btn to="/statistic" color="success" :title="$t('home.statistic')">
+          <v-icon>equalizer</v-icon>
+        </v-btn>
+
+        <v-menu :close-on-content-click="false" offset-y>
+          <template v-slot:activator="{ on }">
+            <v-btn color="blue" dark v-on="on" :title="$t('home.settings')">
+              <v-icon>settings</v-icon>
+            </v-btn>
+          </template>
+
+          <v-card>
+            <v-container grid-list-xs>
+              <v-switch
+                color="success"
+                v-model="showSiteName"
+                :label="$t('home.siteName')"
+                @change="updateViewOptions"
+              ></v-switch>
+              <v-switch
+                color="success"
+                v-model="showUserName"
+                :label="$t('home.userName')"
+                @change="updateViewOptions"
+              ></v-switch>
+              <v-switch
+                color="success"
+                v-model="showUserLevel"
+                :label="$t('home.userLevel')"
+                @change="updateViewOptions"
+              ></v-switch>
+
+              <v-switch
+                color="success"
+                v-model="showWeek"
+                :label="$t('home.week')"
+                @change="updateViewOptions"
+              ></v-switch>
+            </v-container>
+          </v-card>
+        </v-menu>
+
+        <!-- <AutoSignWarning /> -->
         <v-spacer></v-spacer>
 
         <v-text-field
@@ -62,25 +74,49 @@
         item-key="host"
         class="elevation-1"
         ref="userDataTable"
+        :no-data-text="$t('home.nodata')"
       >
         <template slot="items" slot-scope="props">
           <!-- 站点 -->
           <td class="center">
-            <v-avatar size="18" @click.stop="getSiteUserInfo(props.item)">
-              <img :src="props.item.icon">
-            </v-avatar>
-            <br>
+            <v-badge color="red messageCount" overlap>
+              <template
+                v-slot:badge
+                v-if="props.item.user.messageCount > 0"
+                :title="$t('home.newMessage')"
+              >
+                {{
+                props.item.user.messageCount > 10
+                ? ""
+                : props.item.user.messageCount
+                }}
+              </template>
+              <v-btn
+                flat
+                icon
+                class="siteIcon"
+                :title="$t('home.getInfos')"
+                @click.stop="getSiteUserInfo(props.item)"
+              >
+                <v-avatar :size="showSiteName ? 18 : 24">
+                  <img :src="props.item.icon" />
+                </v-avatar>
+              </v-btn>
+            </v-badge>
+
+            <br />
             <a
               :href="props.item.activeURL"
               target="_blank"
               rel="noopener noreferrer nofollow"
               class="nodecoration"
+              v-if="showSiteName"
             >
               <span class="caption">{{ props.item.name }}</span>
             </a>
           </td>
-          <td>{{ isSecret ? "****" : props.item.user.name }}</td>
-          <td>{{ isSecret ? "****" : props.item.user.levelName }}</td>
+          <td>{{ showUserName ? props.item.user.name : "****" }}</td>
+          <td>{{ showUserLevel ? props.item.user.levelName : "****" }}</td>
           <td class="number">
             <div>
               {{ props.item.user.uploaded | formatSize }}
@@ -95,10 +131,18 @@
           <td class="number">{{ props.item.user.seeding }}</td>
           <td class="number">{{ props.item.user.seedingSize | formatSize }}</td>
           <td class="number">{{ props.item.user.bonus | formatNumber }}</td>
-          <td class="number">{{ props.item.user.joinTime | timeAgo }}</td>
           <td
             class="number"
-          >{{ props.item.user.lastUpdateTime | formatDate('YYYY-MM-DD HH:mm:ss') }}</td>
+            :title="props.item.user.joinDateTime"
+          >{{ props.item.user.joinTime | timeAgo(showWeek) }}</td>
+          <td class="number">
+            <v-btn
+              depressed
+              small
+              :to="`statistic/${props.item.host}`"
+              :title="$t('home.statistic')"
+            >{{ props.item.user.lastUpdateTime | formatDate('YYYY-MM-DD HH:mm:ss') }}</v-btn>
+          </td>
           <td class="center">
             <v-progress-circular
               indeterminate
@@ -112,14 +156,27 @@
                 @click="abortRequest(props.item)"
                 color="red"
                 small
-                :title="words.cancelRequest"
+                :title="$t('home.cancelRequest')"
               >cancel</v-icon>
             </v-progress-circular>
-            <span v-else>{{ props.item.user.lastErrorMsg }}</span>
+            <span v-else>
+              <a
+                :href="props.item.activeURL"
+                v-if="!props.item.user.isLogged"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                class="nodecoration"
+              >{{ props.item.user.lastErrorMsg }}</a>
+              <span v-else>{{ props.item.user.lastErrorMsg }}</span>
+            </span>
           </td>
         </template>
       </v-data-table>
     </v-card>
+
+    <v-alert :value="true" color="grey">
+      <div v-html="$t('home.tip')"></div>
+    </v-alert>
   </div>
 </template>
 
@@ -133,75 +190,83 @@ import {
   EModule,
   EUserDataRequestStatus,
   Options,
-  UserInfo
+  UserInfo,
+  EViewKey
 } from "@/interface/common";
-import moment from "moment";
+import dayjs from "dayjs";
+
+import AutoSignWarning from "./AutoSignWarning.vue";
+import { PPF } from "@/service/public";
+
+interface UserInfoEx extends UserInfo {
+  joinDateTime?: string;
+}
 
 const extension = new Extension();
 export default Vue.extend({
+  components: {
+    AutoSignWarning
+  },
   data() {
     return {
-      words: {
-        title: "概览（Beta）",
-        getInfos: "手动刷新用户数据",
-        cancelRequest: "取消请求",
-        requesting: "正在请求",
-        secret: "密"
-      },
       loading: false,
       items: [] as any[],
       pagination: {
         rowsPerPage: -1
       },
-      headers: [
-        { text: "站点", align: "center", value: "name", width: "110px" },
-        { text: "用户名", align: "left", value: "user.name" },
-        { text: "等级", align: "left", value: "user.levelName" },
-        {
-          text: "数据量",
-          align: "right",
-          value: "user.uploaded",
-          width: "120px"
-        },
-        { text: "分享率", align: "right", value: "user.ratio" },
-        { text: "做种数", align: "right", value: "user.seeding" },
-        { text: "做种体积", align: "right", value: "user.seedingSize" },
-        { text: "魔力值/积分", align: "right", value: "user.bonus" },
-        { text: "入站时间", align: "right", value: "user.joinTime" },
-        { text: "数据更新于", align: "right", value: "user.lastUpdateTime" },
-        { text: "状态", align: "center", value: "" }
-      ],
       options: this.$store.state.options,
       beginTime: null as any,
       reloadCount: 0,
       requestQueue: [] as any[],
       requestTimer: 0,
       requestMsg: "",
-      sites: [] as any[],
+      sites: [] as Site[],
       filterKey: "",
-      isSecret: false
+      isSecret: false,
+      showUserName: true,
+      showSiteName: true,
+      showUserLevel: true,
+      showWeek: false
     };
   },
   created() {
     this.init();
   },
 
+  /**
+   * 当前组件激活时触发
+   * 因为启用了缓存，所以需要重新加载数据
+   */
+  activated() {
+    if (!this.loading) {
+      this.init();
+    }
+  },
+
   methods: {
     resetSites() {
       this.sites = [];
       this.options.sites.forEach((site: Site) => {
-        if (site.allowGetUserInfo) {
-          if (!site.user) {
-            site.user = {
+        let _site: Site = this.clone(site);
+        if (_site.allowGetUserInfo) {
+          if (!_site.user) {
+            _site.user = {
               id: "",
               name: "",
               isLogged: false,
               isLoading: false
             };
           } else {
-            this.formatUserInfo(site.user);
+            if (_site.user.isLoading === undefined) {
+              _site.user.isLoading = false;
+            }
+
+            if (_site.user.isLogged === undefined) {
+              _site.user.isLogged = false;
+            }
+            this.formatUserInfo(_site.user, _site);
           }
-          this.sites.push(site);
+          this.sites.push(_site);
         }
       });
     },
@@ -214,19 +279,29 @@ export default Vue.extend({
           this.resetSites();
         })
         .catch();
+
+      let viewOptions = this.$store.getters.viewsOptions(EViewKey.home, {
+        showUserName: true,
+        showSiteName: true,
+        showUserLevel: true,
+        showWeek: false
+      });
+      Object.assign(this, viewOptions);
     },
     getInfos() {
       this.loading = true;
-      this.beginTime = moment();
+      this.beginTime = dayjs();
       this.writeLog({
         event: `Home.getUserInfo.Start`,
-        msg: `准备开始获取个人数据`
+        msg: this.$t("home.startGetting").toString()
       });
 
       this.sites.forEach((site: Site, index: number) => {
         this.writeLog({
           event: `Home.getUserInfo.Processing`,
-          msg: "正在获取 [" + site.name + "] 个人数据",
+          msg: this.$t("home.gettingForSite", {
+            siteName: site.name
+          }).toString(),
           data: {
             host: site.host,
             name: site.name
@@ -260,11 +335,9 @@ export default Vue.extend({
       if (index !== -1) {
         this.requestQueue.splice(index, 1);
         if (this.requestQueue.length == 0) {
-          this.requestMsg = `请求完成，耗时：${moment().diff(
-            this.beginTime,
-            "seconds",
-            true
-          )} 秒。`;
+          this.requestMsg = this.$t("home.requestCompleted", {
+            second: dayjs().diff(this.beginTime, "second", true)
+          }).toString();
           this.loading = false;
           this.writeLog({
             event: `Home.getUserInfo.Finished`,
@@ -278,17 +351,22 @@ export default Vue.extend({
     /**
      * 格式化一些用户信息
      */
-    formatUserInfo(user: UserInfo) {
+    formatUserInfo(user: UserInfoEx, site: Site) {
       let downloaded = user.downloaded as number;
       let uploaded = user.uploaded as number;
       // 没有下载量时设置分享率为无限
       if (downloaded == 0 && uploaded > 0) {
         user.ratio = -1;
       }
-      // 没有分享率时，重新以 上传量 / 下载量计算
-      else if (downloaded > 0 && !user.ratio) {
+      // 重新以 上传量 / 下载量计算分享率
+      else if (downloaded > 0) {
         user.ratio = uploaded / downloaded;
       }
+
+      // 如果设置了时区，则进行转换
+      user.joinTime = PPF.transformTime(user.joinTime, site.timezoneOffset);
+
+      user.joinDateTime = dayjs(user.joinTime).format("YYYY-MM-DD HH:mm:ss");
     },
     /**
      * 获取站点用户信息
@@ -300,6 +378,7 @@ export default Vue.extend({
 
       let user = site.user;
       user.isLoading = true;
+      user.isLogged = false;
       user.lastErrorMsg = "";
 
       this.requestQueue.push(Object.assign({}, site));
@@ -309,7 +388,7 @@ export default Vue.extend({
           console.log(result);
           if (result && result.name) {
             user = Object.assign(user, result);
-            this.formatUserInfo(user);
+            this.formatUserInfo(user, site);
           }
         })
         .catch(result => {
@@ -317,27 +396,33 @@ export default Vue.extend({
           if (result.msg && result.msg.status) {
             user.lastErrorMsg = result.msg.msg;
           } else {
-            user.lastErrorMsg = "发生错误";
+            user.lastErrorMsg = this.$t("home.getUserInfoError").toString();
           }
         })
         .finally(() => {
           this.removeQueue(site);
+          // 重新加载配置信息
+          this.$store.commit("readConfig");
         });
     },
 
     abortRequest(site: Site) {
       extension
-        .sendRequest(EAction.abortSearch, null, site)
+        .sendRequest(EAction.abortGetUserInfo, null, site)
         .then(() => {
           this.writeLog({
             event: `Home.getUserInfo.Abort`,
-            msg: `${site.name} 获取用户资料请求已取消`
+            msg: this.$t("home.getUserInfoAbort", {
+              siteName: site.name
+            }).toString()
           });
         })
         .catch(() => {
           this.writeLog({
             event: `Home.getUserInfo.Abort.Error`,
-            msg: `${site.name} 获取用户资料请求取消失败`
+            msg: this.$t("home.getUserInfoAbortError", {
+              siteName: site.name
+            }).toString()
           });
           this.removeQueue(site);
         });
@@ -349,6 +434,18 @@ export default Vue.extend({
      */
     clone(source: any) {
       return JSON.parse(JSON.stringify(source));
+    },
+
+    updateViewOptions() {
+      this.$store.dispatch("updateViewOptions", {
+        key: EViewKey.home,
+        options: {
+          showUserName: this.showUserName,
+          showSiteName: this.showSiteName,
+          showUserLevel: this.showUserLevel,
+          showWeek: this.showWeek
+        }
+      });
     }
   },
 
@@ -359,15 +456,75 @@ export default Vue.extend({
       }
       let number = parseFloat(v);
       if (isNaN(number)) {
-        return "-";
+        return "";
       }
       return number.toFixed(2);
+    }
+  },
+
+  computed: {
+    headers(): Array<any> {
+      return [
+        {
+          text: this.$t("home.headers.site"),
+          align: "center",
+          value: "name",
+          width: "110px"
+        },
+        {
+          text: this.$t("home.headers.userName"),
+          align: "left",
+          value: "user.name"
+        },
+        {
+          text: this.$t("home.headers.levelName"),
+          align: "left",
+          value: "user.levelName"
+        },
+        {
+          text: this.$t("home.headers.activitiyData"),
+          align: "right",
+          value: "user.uploaded",
+          width: "120px"
+        },
+        {
+          text: this.$t("home.headers.ratio"),
+          align: "right",
+          value: "user.ratio"
+        },
+        {
+          text: this.$t("home.headers.seeding"),
+          align: "right",
+          value: "user.seeding"
+        },
+        {
+          text: this.$t("home.headers.seedingSize"),
+          align: "right",
+          value: "user.seedingSize"
+        },
+        {
+          text: this.$t("home.headers.bonus"),
+          align: "right",
+          value: "user.bonus"
+        },
+        {
+          text: this.$t("home.headers.joinTime"),
+          align: "right",
+          value: "user.joinTime"
+        },
+        {
+          text: this.$t("home.headers.lastUpdateTime"),
+          align: "right",
+          value: "user.lastUpdateTime"
+        },
+        { text: this.$t("home.headers.status"), align: "center", value: "" }
+      ];
     }
   }
 });
 </script>
 
-<style lang="scss" >
+<style lang="scss">
 .home {
   table.v-table thead tr:not(.v-datatable__progress) th,
   table.v-table tbody tr td {
@@ -384,6 +541,20 @@ export default Vue.extend({
 
   .nodecoration {
     text-decoration: none;
+  }
+
+  .messageCount {
+    font-size: 9px;
+    height: 16px;
+    width: 16px;
+    top: -2px;
+    right: -8px;
+  }
+
+  .siteIcon {
+    margin: 0;
+    height: 30px;
+    width: 30px;
   }
 }
 </style>

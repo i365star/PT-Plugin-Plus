@@ -1,5 +1,6 @@
 {
   "name": "HDPOST",
+  "timezoneOffset": "+0800",
   "description": "HDPOST",
   "url": "https://hdpost.top/",
   "icon": "https://hdpost.top/favicon.ico",
@@ -8,5 +9,9 @@
     "综合"
   ],
   "schema": "meanTorrent",
-  "host": "hdpost.top"
+  "host": "hdpost.top",
+  "supportedFeatures": {
+    "imdbSearch": false,
+    "userData": "◐"
+  }
 }

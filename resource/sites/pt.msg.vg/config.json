@@ -1,0 +1,10 @@
+{
+  "name": "PTMSG",
+  "timezoneOffset": "+0800",
+  "schema": "NexusPHP",
+  "url": "https://pt.msg.vg/",
+  "description": "PT速递",
+  "icon": "https://pt.msg.vg/favicon.ico",
+  "host": "pt.msg.vg",
+  "collaborator": "bjgetite"
+}

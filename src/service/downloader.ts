@@ -1,4 +1,4 @@
-import { Dictionary, ERequsetType } from "@/interface/common";
+import { Dictionary, ERequestMethod } from "@/interface/common";
 import FileSaver from "file-saver";
 
 export type downloadFile = {
@@ -6,12 +6,15 @@ export type downloadFile = {
   fileName?: string;
   getDataOnly?: boolean;
   timeout?: number;
+  method?: ERequestMethod;
 };
 
 export type downloadOptions = {
   files?: downloadFile[];
   autoStart?: boolean;
   onCompleted?: Function;
+  onError?: Function;
+  onProgress?: Function;
 };
 
 export class Downloader {
@@ -45,6 +48,19 @@ export class Downloader {
     file.onStart = () => {
       this.downloadingCount++;
     };
+    file.onError = (e: any) => {
+      this.downloadingCount--;
+      this.completedCount++;
+      if (this.options.onError) {
+        this.options.onError.call(this, file, e);
+      }
+      delete this.files[file.url];
+    };
+    file.onProgress = (loaded: number, total: number, speed: number) => {
+      if (this.options.onProgress) {
+        this.options.onProgress.call(this, file, loaded, total, speed);
+      }
+    };
     // file.id = String.getRandomString(16);
     this.files[file.url] = file;
     this.queues.push(file);
@@ -69,7 +85,7 @@ export class FileDownloader {
   public status: number = 0;
   public statusText: string = "";
   public url: string = "";
-  public requsetType: ERequsetType = ERequsetType.GET;
+  public requestMethod: ERequestMethod = ERequestMethod.GET;
   public postData: any = null;
   public content: any;
   public fileName: string = "";
@@ -92,6 +108,7 @@ export class FileDownloader {
     this.url = options.url;
     this.getDataOnly = options.getDataOnly || false;
     this.timeout = options.timeout || 0;
+    this.requestMethod = options.method || ERequestMethod.GET;
   }
 
   public start() {
@@ -102,7 +119,7 @@ export class FileDownloader {
     if (this.timeout > 0) {
       this.xhr.timeout = this.timeout;
     }
-    this.xhr.open(this.requsetType, this.url, true);
+    this.xhr.open(this.requestMethod, this.url, true);
     // 指定返回的实体类型"blob"，该类型表示可以为任意文件
     // https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest
     this.xhr.responseType = "blob";
@@ -171,7 +188,7 @@ export class FileDownloader {
     if (this.postData) {
       data = $.param(this.postData);
     }
-    if (this.requsetType == ERequsetType.POST) {
+    if (this.requestMethod == ERequestMethod.POST) {
       this.xhr.setRequestHeader(
         "Content-Type",
         "application/x-www-form-urlencoded"
@@ -191,7 +208,7 @@ export class FileDownloader {
       let item = items[index];
       let tmp = item.replace(" ", "").split("=");
       if (tmp.length == 2) {
-        fields[tmp[0]] = tmp[1];
+        fields[tmp[0]] = tmp[1].trim();
       }
     }
     let fileName;

@@ -1,131 +1,157 @@
 {
-  "name": "keepfrds",
+  "name": "PT@KEEPFRDS",
+  "timezoneOffset": "+0800",
   "url": "https://pt.keepfrds.com/",
-  "icon": "https://pt.keepfrds.com/favicon.ico",
+  "icon": "https://pt.keepfrds.com/static/favicon-64x64.png",
   "tags": [
     "影视",
     "综合"
   ],
   "schema": "NexusPHP",
   "host": "pt.keepfrds.com",
-  "searchEntry": [
-    {
-      "entry": "/torrents.php?search=$key$&notnewword=1",
+  "searchEntryConfig": {
+    "merge": true,
+    "fieldSelector": {
+      "progress": {
+        "selector": ["img[src='/static/pic/newpic/2s_dl.gif']", "img[src='/static/pic/newpic/2s_up.gif'], img[src='/static/pic/newpic/2s_dled.gif']", ""],
+        "switchFilters": [
+          ["query.parent().parent().next().attr('style').split(';')[0].replace('width: ','').replace('px','')/3"],
+          ["100"],
+          ["null"]
+        ]
+      },
+      "status": {
+        "selector": ["img[src='/static/pic/newpic/2s_dl.gif']", "img[src='/static/pic/newpic/2s_up.gif']", "img[src='/static/pic/newpic/2s_dled.gif']"],
+        "switchFilters": [
+          ["1"],
+          ["2"],
+          ["255"]
+        ]
+      }
+    }
+  },
+  "searchEntry": [{
       "name": "全站",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": true
     },
     {
-      "entry": "/torrents.php?cat401=1&search=$key$&notnewword=1",
+      "queryString": "cat401=1",
       "name": "Movies",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat404=1&search=$key$&notnewword=1",
+      "queryString": "cat404=1",
       "name": "Documentaries",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat405=1&search=$key$&notnewword=1",
+      "queryString": "cat405=1",
       "name": "Animations",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat402=1&search=$key$&notnewword=1",
+      "queryString": "cat402=1",
       "name": "TV Series",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat403=1&search=$key$&notnewword=1",
+      "queryString": "cat403=1",
       "name": "TV Shows",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat406=1&search=$key$&notnewword=1",
+      "queryString": "cat406=1",
       "name": "Music Videos",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat407=1&search=$key$&notnewword=1",
+      "queryString": "cat407=1",
       "name": "Sports",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat409=1&search=$key$&notnewword=1",
+      "queryString": "cat409=1",
       "name": "Misc",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     },
     {
-      "entry": "/torrents.php?cat408=1&search=$key$&notnewword=1",
+      "queryString": "cat408=1",
       "name": "HQ Audio",
-      "resultType": "html",
-      "parseScriptFile": "/schemas/NexusPHP/getSearchResult.js",
-      "resultSelector": "table.torrents:last > tbody > tr",
       "enabled": false
     }
   ],
-  "categories": [
-    {
-      "id": 401,
-      "name": "Movies"
+  "categories": [{
+    "entry": "*",
+    "result": "&cat$id$=1",
+    "category": [{
+        "id": 401,
+        "name": "Movies"
+      },
+      {
+        "id": 404,
+        "name": "Documentaries"
+      },
+      {
+        "id": 405,
+        "name": "Animations"
+      },
+      {
+        "id": 402,
+        "name": "TV Series"
+      },
+      {
+        "id": 403,
+        "name": "TV Shows"
+      },
+      {
+        "id": 406,
+        "name": "Music Videos"
+      },
+      {
+        "id": 407,
+        "name": "Sports"
+      },
+      {
+        "id": 409,
+        "name": "Misc"
+      },
+      {
+        "id": 408,
+        "name": "HQ Audio"
+      }
+    ]
+  }],
+  "selectors": {
+    "userBaseInfo": {
+      "merge": true,
+      "fields": {
+        "messageCount": {
+          "selector": ["a[href*='messages.php'] b span[style*='color: red']"]
+        }
+      }
     },
-    {
-      "id": 404,
-      "name": "Documentaries"
+    "userExtendInfo": {
+      "merge": true,
+      "fields": {
+        "bonus": {
+          "selector": ["td.rowhead:contains('魔力值') + td"],
+          "filters": ["query.text().replace(/,/g,'').match(/魔力值:.+?([\\d.]+)/)[1]", "parseFloat(query)"]
+        }
+      }
     },
-    {
-      "id": 405,
-      "name": "Animations"
-    },
-    {
-      "id": 402,
-      "name": "TV Series"
-    },
-    {
-      "id": 403,
-      "name": "TV Shows"
-    },
-    {
-      "id": 406,
-      "name": "Music Videos"
-    },
-    {
-      "id": 407,
-      "name": "Sports"
-    },
-    {
-      "id": 409,
-      "name": "Misc"
-    },
-    {
-      "id": 408,
-      "name": "HQ Audio"
+    "/details.php": {
+      "merge": true,
+      "fields": {
+        "downloadURL": {
+          "selector": ["input#download_link"],
+          "filters": ["query.val()"]
+        }
+      }
     }
-  ]
+  },
+  "mergeSchemaTagSelectors": true,
+  "torrentTagSelectors": [{
+    "name": "⛔️",
+    "selector": "td.embedded b > font.recommended"
+  }]
 }

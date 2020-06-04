@@ -1,9 +1,9 @@
-(function (options) {
+(function(options, Searcher) {
   class Parser {
     constructor() {
       this.haveData = false;
       if (/\/login/.test(options.responseText)) {
-        options.errorMsg = `[${options.site.name}]需要登录后再搜索`;
+        options.status = ESearchResultParseStatus.needLogin; //`[${options.site.name}]需要登录后再搜索`;
         return;
       }
 
@@ -20,12 +20,14 @@
         return [];
       }
       let site = options.site;
-      let selector = options.resultSelector || "div.table-responsive > table:first";
+      site.searchEntryConfig = options.entry
+      let selector =
+        options.resultSelector || "div.table-responsive > table:first";
       let table = options.page.find(selector);
       // 获取种子列表行
       let rows = table.find("> tbody > tr");
       if (rows.length == 0) {
-        options.errorMsg = `[${options.site.name}]没有定位到种子列表，或没有相关的种子`;
+        options.status = ESearchResultParseStatus.torrentTableIsEmpty; //`[${options.site.name}]没有定位到种子列表，或没有相关的种子`;
         return [];
       }
       let results = [];
@@ -69,49 +71,71 @@
         // 评论数
         if (cell.find("a[href*='comments']").length) {
           fieldIndex.comments = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 发布时间
-        if (cell.find("a[href*='created_at']").length || cell.find("i.fa-clock").length) {
+        if (
+          cell.find("a[href*='created_at']").length ||
+          cell.find("i.fa-clock").length
+        ) {
           fieldIndex.time = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 大小
-        if (cell.find("a[href*='size']").length || cell.find("i.fa-file").length) {
+        if (
+          cell.find("a[href*='size']").length ||
+          cell.find("i.fa-file").length
+        ) {
           fieldIndex.size = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 种子数
-        if (cell.find("a[href*='seed']").length || cell.find("i.fa-arrow-circle-up").length) {
+        if (
+          cell.find("a[href*='seed']").length ||
+          cell.find("i.fa-arrow-circle-up").length
+        ) {
           fieldIndex.seeders = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 下载数
-        if (cell.find("a[href*='leech']").length || cell.find("i.fa-arrow-circle-down").length) {
+        if (
+          cell.find("a[href*='leech']").length ||
+          cell.find("i.fa-arrow-circle-down").length
+        ) {
           fieldIndex.leechers = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 完成数
-        if (cell.find("a[href*='complete']").length || cell.find("i.fa-check-square").length) {
+        if (
+          cell.find("a[href*='complete']").length ||
+          cell.find("i.fa-check-square").length
+        ) {
           fieldIndex.completed = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
 
         // 分类
         if (cell.is(".torrents-icon")) {
           fieldIndex.category = index;
-          fieldIndex.author = index == fieldIndex.author ? -1 : fieldIndex.author;
+          fieldIndex.author =
+            index == fieldIndex.author ? -1 : fieldIndex.author;
           continue;
         }
       }
@@ -132,7 +156,19 @@
           }
 
           // 获取下载链接
-          let url = row.find("a[href*='/download/']").attr("href");
+          let url = "";
+
+          let downloadURL = row.find("a[href*='/download/']");
+          if (downloadURL.length == 0) {
+            downloadURL = row.find("a[href*='/download_check/']");
+            if (downloadURL.length > 0) {
+              url = downloadURL
+                .attr("href")
+                .replace("/download_check/", "/download/");
+            }
+          } else {
+            url = downloadURL.attr("href");
+          }
 
           if (url.length == 0) {
             continue;
@@ -147,26 +183,59 @@
             subTitle: this.getSubTitle(title, row),
             link,
             url: url,
-            size: cells.eq(fieldIndex.size).text().trim() || 0,
-            time: fieldIndex.time == -1 ? "" : cells.eq(fieldIndex.time).find("span[title]").attr("title") || cells.eq(fieldIndex.time).text() || "",
-            author: fieldIndex.author == -1 ? "" : cells.eq(fieldIndex.author).text() || "",
-            seeders: fieldIndex.seeders == -1 ? "" : cells.eq(fieldIndex.seeders).text() || 0,
-            leechers: fieldIndex.leechers == -1 ? "" : cells.eq(fieldIndex.leechers).text() || 0,
-            completed: fieldIndex.completed == -1 ? "" : cells.eq(fieldIndex.completed).text() || 0,
-            comments: fieldIndex.comments == -1 ? "" : cells.eq(fieldIndex.comments).text() || 0,
+            size:
+              cells
+                .eq(fieldIndex.size)
+                .text()
+                .trim() || 0,
+            time:
+              fieldIndex.time == -1
+                ? ""
+                : cells
+                    .eq(fieldIndex.time)
+                    .find("span[title]")
+                    .attr("title") ||
+                  cells.eq(fieldIndex.time).text().replace('秒前', ' seconds ago').replace('秒前', ' seconds ago').replace('分钟前', ' minutes ago').replace('分鐘前', ' minutes ago').replace('天前', ' day ago').replace('小時前', ' hours ago').replace('小时前', ' hours ago')||
+                  "",
+            author:
+              fieldIndex.author == -1
+                ? ""
+                : cells.eq(fieldIndex.author).text() || "",
+            seeders:
+              fieldIndex.seeders == -1
+                ? ""
+                : cells.eq(fieldIndex.seeders).text() || 0,
+            leechers:
+              fieldIndex.leechers == -1
+                ? ""
+                : cells.eq(fieldIndex.leechers).text() || 0,
+            completed:
+              fieldIndex.completed == -1
+                ? ""
+                : cells.eq(fieldIndex.completed).text() || 0,
+            comments:
+              fieldIndex.comments == -1
+                ? ""
+                : cells.eq(fieldIndex.comments).text() || 0,
             site: site,
-            tags: this.getTags(row, options.torrentTagSelectors),
+            tags: Searcher.getRowTags(site, row),
             entryName: options.entry.name,
-            category: fieldIndex.category == -1 ? null : this.getCategory(cells.eq(fieldIndex.category))
+            category:
+              fieldIndex.category == -1
+                ? null
+                : this.getCategory(cells.eq(fieldIndex.category)),
+            progress: this.getFieldValue(row, cells, fieldIndex, "progress"),
+            status: this.getFieldValue(row, cells, fieldIndex, "status")
           };
           results.push(data);
         }
         if (results.length == 0) {
-          options.errorMsg = `[${options.site.name}]没有搜索到相关的种子`;
+          options.status = ESearchResultParseStatus.noTorrents; // `[${options.site.name}]没有搜索到相关的种子`;
         }
       } catch (error) {
         console.log(error);
-        options.errorMsg = `[${options.site.name}]获取种子信息出错: ${error.stack}`;
+        options.status = ESearchResultParseStatus.parseError;
+        options.errorMsg = error.stack; //`[${options.site.name}]获取种子信息出错: ${error.stack}`;
       }
 
       return results;
@@ -174,8 +243,8 @@
 
     /**
      * 获取标签
-     * @param {*} row 
-     * @param {*} selectors 
+     * @param {*} row
+     * @param {*} selectors
      * @return array
      */
     getTags(row, selectors) {
@@ -183,7 +252,7 @@
       if (selectors && selectors.length > 0) {
         selectors.forEach(item => {
           if (item.selector) {
-            let result = row.find(item.selector)
+            let result = row.find(item.selector);
             if (result.length) {
               tags.push({
                 name: item.name,
@@ -198,8 +267,8 @@
 
     /**
      * 获取副标题
-     * @param {*} title 
-     * @param {*} row 
+     * @param {*} title
+     * @param {*} row
      */
     getSubTitle(title, row) {
       return "";
@@ -219,9 +288,34 @@
       }
       return result;
     }
+
+    getFieldValue(row, cells, fieldIndex, fieldName, returnCell) {
+      let parent = row;
+      let cell = null;
+      if (
+        cells &&
+        fieldIndex &&
+        fieldIndex[fieldName] !== undefined &&
+        fieldIndex[fieldName] !== -1
+      ) {
+        cell = cells.eq(fieldIndex[fieldName]);
+        parent = cell || row;
+      }
+
+      let result = Searcher.getFieldValue(site, parent, fieldName);
+
+      if (!result && cell) {
+        if (returnCell) {
+          return cell;
+        }
+        result = cell.text();
+      }
+
+      return result;
+    }
   }
 
-  let parser = new Parser(options)
-  options.results = parser.getResult()
+  let parser = new Parser(options);
+  options.results = parser.getResult();
   console.log(options.results);
-})(options)
+})(options, options.searcher);

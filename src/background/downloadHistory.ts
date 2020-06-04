@@ -30,17 +30,23 @@ export class DownloadHistory {
    * @param host 站点域名
    * @param clientId 下载客户端ID
    */
-  public add(data: any, host: string = "", clientId: string = "") {
+  public add(
+    data: any,
+    host: string = "",
+    clientId: string = "",
+    success: boolean = true
+  ) {
     let saveData = {
       data,
       clientId,
       host,
+      success,
       time: new Date().getTime()
     };
     if (!this.items) {
       this.load().then(() => {
         this.items.push(saveData);
-        this.storage.set(EConfigKey.downloadHistory, this.items);
+        this.updateData();
       });
     } else {
       let index = this.items.findIndex((item: any) => {
@@ -48,7 +54,7 @@ export class DownloadHistory {
       });
       if (index === -1) {
         this.items.push(saveData);
-        this.storage.set(EConfigKey.downloadHistory, this.items);
+        this.updateData();
       }
     }
   }
@@ -69,7 +75,7 @@ export class DownloadHistory {
             this.items.splice(index, 1);
           }
         }
-        this.storage.set(EConfigKey.downloadHistory, this.items);
+        this.updateData();
         resolve(this.items);
       });
     });
@@ -81,8 +87,34 @@ export class DownloadHistory {
   public clear(): Promise<any> {
     return new Promise<any>((resolve?: any, reject?: any) => {
       this.items = [];
-      this.storage.set(EConfigKey.downloadHistory, this.items);
+      this.updateData();
       resolve(this.items);
     });
+  }
+
+  /**
+   * 重置
+   * @param datas
+   */
+  public reset(datas: any[]): Promise<any> {
+    return new Promise<any>((resolve?: any, reject?: any) => {
+      if (!datas) {
+        reject(false);
+        return;
+      }
+      if (!Array.isArray(datas)) {
+        reject(false);
+        return;
+      }
+
+      this.items = datas;
+      this.updateData();
+
+      resolve(this.items);
+    });
+  }
+
+  private updateData() {
+    this.storage.set(EConfigKey.downloadHistory, this.items);
   }
 }

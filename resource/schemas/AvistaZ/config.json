@@ -9,7 +9,7 @@
     "name": "种子列表",
     "pages": ["/torrents"],
     "styles": ["/libs/album/style.css"],
-    "scripts": ["/libs/album/album.js", "torrents.js"]
+    "scripts": ["/schemas/NexusPHP/common.js", "/libs/album/album.js", "torrents.js"]
   }],
   "searchEntry": [{
     "entry": "/torrents?in=1&search=$key$",
@@ -18,24 +18,45 @@
     "parseScriptFile": "/schemas/AvistaZ/getSearchResult.js",
     "resultSelector": "div.table-responsive > table:first",
     "enabled": true
-  }],
+  }], 
+  "searchEntryConfig": {
+    "fieldSelector": {
+      "progress": {
+        "selector": ["tr[class*='success'], tr[class*='warning'], tr[class*='danger']", "tr[class*='info']",""],
+        "switchFilters": [
+          ["100"],
+          ["0"],
+          ["null"]
+        ]
+      },
+      "status": {
+        "selector": ["tr[class*='warning'], tr[class*='danger']", "tr[class*='success']", "tr[class*='tr.info']"],
+        "switchFilters": [
+          ["3"],
+          ["2"],
+          ["1"]
+        ]
+      }
+    }
+  },
   "torrentTagSelectors": [{
     "name": "Free",
-    "selector": "i.fa-star",
-    "color": "blue"
+    "selector": "i.fa-star"
   }, {
     "name": "2xUp",
-    "selector": "i.fa-diamond",
-    "color": "lime"
+    "selector": "i.fa-diamond"
   }, {
     "name": "50%",
-    "selector": "i.fa-star-half-o",
-    "color": "orange"
+    "selector": "i.fa-star-half-o"
   }],
   "selectors": {
     "userBaseInfo": {
       "page": "/",
       "fields": {
+        "messageCount": {
+          "selector": ["a[title=Messages] span.message-count.badge"],
+          "filters": ["query.text()"]
+        },
         "name": {
           "selector": ["a[href*='/profile/']:first"],
           "filters": ["query.attr('href').match(/profile\\/(.+)/)", "(query && query.length>=2)?(query[1]):''"]
@@ -54,11 +75,11 @@
         },
         "uploaded": {
           "selector": ["td:contains('Uploaded') + td"],
-          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[TGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
+          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[ZEPTGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
         },
         "downloaded": {
           "selector": ["td:contains('Downloaded') + td"],
-          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[TGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
+          "filters": ["query.text().replace(/,/g,'').match(/([\\d.]+ ?[ZEPTGMK]?i?B)/)", "(query && query.length>=2)?(query[1]).sizeToNumber():0"]
         },
         "ratio": {
           "selector": "td:contains('Ratio') + td",
@@ -78,9 +99,18 @@
         "seeding": {
           "selector": ["li:contains('Seeding'):first", "li:contains('Seeds'):first"],
           "filters": ["query.text().replace(/,/g,'').match(/([\\d]+)/)", "(query && query.length>=2)?query[1]:''"]
-        },
-        "seedingSize": {
-          "value": -1
+        }
+      }
+    },
+    "userSeedingTorrents": {
+      "page": "/profile/$user.name$/active?order=progress&sort=desc",
+      "parser": "/schemas/AvistaZ/getUserSeedingTorrents.js"
+    },
+    "common": {
+      "fields": {
+        "sayThanksButton": {
+          "selector": ["button#btn-torrent-thank"],
+          "filters": ["query"]
         }
       }
     }
